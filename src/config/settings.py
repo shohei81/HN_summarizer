@@ -103,25 +103,37 @@ def _load_from_environment(config: Dict[str, Any]) -> None:
     """
     # LLM API keys
     if config['summarizer']['provider'] == 'gemini':
-        config['summarizer']['gemini_api_key'] = os.environ.get('GEMINI_API_KEY')
+        # Only override if the environment variable exists and the config doesn't already have a key
+        env_key = os.environ.get('GEMINI_API_KEY')
+        if env_key and not config['summarizer'].get('gemini_api_key'):
+            config['summarizer']['gemini_api_key'] = env_key
     elif config['summarizer']['provider'] == 'openai':
-        config['summarizer']['openai_api_key'] = os.environ.get('OPENAI_API_KEY')
+        env_key = os.environ.get('OPENAI_API_KEY')
+        if env_key and not config['summarizer'].get('openai_api_key'):
+            config['summarizer']['openai_api_key'] = env_key
     elif config['summarizer']['provider'] == 'anthropic':
-        config['summarizer']['anthropic_api_key'] = os.environ.get('ANTHROPIC_API_KEY')
+        env_key = os.environ.get('ANTHROPIC_API_KEY')
+        if env_key and not config['summarizer'].get('anthropic_api_key'):
+            config['summarizer']['anthropic_api_key'] = env_key
     
     # Delivery credentials
     if config['delivery']['method'] == 'email':
         email_config = config['delivery'].get('email', {})
-        email_config['username'] = os.environ.get('EMAIL_USERNAME', email_config.get('username'))
-        email_config['password'] = os.environ.get('EMAIL_PASSWORD', email_config.get('password'))
+        # Only use environment variables if the config doesn't already have values
+        if not email_config.get('username'):
+            email_config['username'] = os.environ.get('EMAIL_USERNAME')
+        if not email_config.get('password'):
+            email_config['password'] = os.environ.get('EMAIL_PASSWORD')
         config['delivery']['email'] = email_config
     
     elif config['delivery']['method'] == 'slack':
         slack_config = config['delivery'].get('slack', {})
-        slack_config['webhook_url'] = os.environ.get('SLACK_WEBHOOK_URL', slack_config.get('webhook_url'))
+        if not slack_config.get('webhook_url'):
+            slack_config['webhook_url'] = os.environ.get('SLACK_WEBHOOK_URL')
         config['delivery']['slack'] = slack_config
     
     elif config['delivery']['method'] == 'line':
         line_config = config['delivery'].get('line', {})
-        line_config['access_token'] = os.environ.get('LINE_ACCESS_TOKEN', line_config.get('access_token'))
+        if not line_config.get('access_token'):
+            line_config['access_token'] = os.environ.get('LINE_ACCESS_TOKEN')
         config['delivery']['line'] = line_config

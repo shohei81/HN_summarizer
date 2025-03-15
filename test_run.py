@@ -37,7 +37,10 @@ def main():
         config = load_config(config_path)
         
         # Check for API keys
-        if config['summarizer']['provider'] == 'openai' and not config['summarizer'].get('openai_api_key'):
+        if config['summarizer']['provider'] == 'gemini' and not config['summarizer'].get('gemini_api_key'):
+            logger.warning("Gemini API key not found in config or environment variables")
+            logger.info("This test will fetch content but won't be able to summarize without an API key")
+        elif config['summarizer']['provider'] == 'openai' and not config['summarizer'].get('openai_api_key'):
             logger.warning("OpenAI API key not found in config or environment variables")
             logger.info("This test will fetch content but won't be able to summarize without an API key")
         

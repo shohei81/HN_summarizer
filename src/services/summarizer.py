@@ -34,6 +34,9 @@ class GeminiProvider(LLMProvider):
         self.model = model
         self.max_tokens = max_tokens
         
+        # Log the model being used
+        logger.info(f"Initializing Gemini provider with model: {model}")
+        
         # Import here to avoid requiring the package if not using Gemini
         try:
             import google.generativeai as genai
@@ -65,18 +68,30 @@ class GeminiProvider(LLMProvider):
                 "top_p": 0.95,
             }
             
+            logger.info(f"Using Gemini model: {self.model}")
+            
             # Generate response
-            model = self.genai.GenerativeModel(
-                model_name=self.model,
-                generation_config=generation_config
-            )
-            
-            response = model.generate_content(prompt)
-            
-            # Extract summary from response
-            summary = response.text.strip()
-            
-            return summary
+            try:
+                model = self.genai.GenerativeModel(
+                    model_name=self.model,
+                    generation_config=generation_config
+                )
+                
+                response = model.generate_content(prompt)
+                
+                # Extract summary from response
+                summary = response.text.strip()
+                
+                return summary
+            except ImportError as e:
+                logger.error(f"ImportError with google.generativeai: {str(e)}")
+                raise
+            except AttributeError as e:
+                logger.error(f"AttributeError with Gemini API: {str(e)}")
+                raise
+            except ValueError as e:
+                logger.error(f"ValueError with Gemini API (possibly invalid model name '{self.model}'): {str(e)}")
+                raise
             
         except Exception as e:
             logger.error(f"Gemini API request failed: {str(e)}")
@@ -389,6 +404,9 @@ class Summarizer:
             
         elif provider_name == 'gemini':
             api_key = self.config.get('gemini_api_key')
+            logger.info(f"Gemini API key present: {bool(api_key)}")
+            logger.info(f"Gemini config: {self.config}")
+            
             if not api_key:
                 raise ValueError("Google API key is required for Gemini")
             
