@@ -48,8 +48,8 @@ def get_default_config() -> Dict[str, Any]:
     """
     return {
         'summarizer': {
-            'provider': 'openai',
-            'openai_model': 'gpt-3.5-turbo',
+            'provider': 'gemini',
+            'gemini_model': 'gemini-1.5-flash-latest',
             'max_tokens': 500,
             # API keys should be provided via environment variables or config file
         },
@@ -102,7 +102,9 @@ def _load_from_environment(config: Dict[str, Any]) -> None:
         config: Configuration dictionary to update
     """
     # LLM API keys
-    if config['summarizer']['provider'] == 'openai':
+    if config['summarizer']['provider'] == 'gemini':
+        config['summarizer']['gemini_api_key'] = os.environ.get('GEMINI_API_KEY')
+    elif config['summarizer']['provider'] == 'openai':
         config['summarizer']['openai_api_key'] = os.environ.get('OPENAI_API_KEY')
     elif config['summarizer']['provider'] == 'anthropic':
         config['summarizer']['anthropic_api_key'] = os.environ.get('ANTHROPIC_API_KEY')

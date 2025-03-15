@@ -3,15 +3,19 @@
 
 # Summarizer configuration
 summarizer:
-  # LLM provider to use: 'openai', 'anthropic', or 'ollama'
-  provider: openai
+  # LLM provider to use: 'gemini', 'openai', 'anthropic', or 'ollama'
+  provider: gemini
+  
+  # Gemini configuration (if provider is 'gemini')
+  gemini_model: gemini-1.5-flash-latest  # Flash is cheaper and faster than Pro
+  gemini_api_key: your_google_api_key_here  # Or set GEMINI_API_KEY environment variable
   
   # OpenAI configuration (if provider is 'openai')
-  openai_model: gpt-3.5-turbo  # Cheaper than GPT-4
-  openai_api_key: your_openai_api_key_here  # Or set OPENAI_API_KEY environment variable
+  # openai_model: gpt-3.5-turbo
+  # openai_api_key: your_openai_api_key_here  # Or set OPENAI_API_KEY environment variable
   
   # Anthropic configuration (if provider is 'anthropic')
-  # anthropic_model: claude-instant-1  # Cheaper than Claude 2
+  # anthropic_model: claude-instant-1
   # anthropic_api_key: your_anthropic_api_key_here  # Or set ANTHROPIC_API_KEY environment variable
   
   # Ollama configuration (if provider is 'ollama')

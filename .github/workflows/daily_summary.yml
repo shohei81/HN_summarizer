@@ -30,6 +30,7 @@ jobs:
       - name: Run HN Summarizer
         env:
           # LLM API keys
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           

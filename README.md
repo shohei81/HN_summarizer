@@ -6,8 +6,8 @@ A tool to fetch, summarize, and deliver top Hacker News stories on a daily basis
 
 - **Automated Fetching**: Retrieves the top stories from Hacker News API daily
 - **Content Extraction**: Extracts the main content from article URLs
-- **AI Summarization**: Summarizes articles using various LLM providers (OpenAI, Anthropic, or local Ollama)
-- **Flexible Delivery**: Sends summaries via email, Slack, or LINE
+- **AI Summarization**: Summarizes articles using Google's Gemini 1.5 Flash (with support for OpenAI, Anthropic, or local Ollama)
+- **Email Delivery**: Sends summaries via email (with support for Slack or LINE)
 - **Secure Configuration**: Handles sensitive credentials via environment variables
 - **Scheduled Execution**: Runs automatically using GitHub Actions
 
@@ -78,8 +78,8 @@ The repository includes a GitHub Actions workflow that runs the script daily. To
 
 1. Fork this repository
 2. Add your API keys and credentials as GitHub Secrets:
-   - `OPENAI_API_KEY` (or `ANTHROPIC_API_KEY`)
-   - `EMAIL_USERNAME` and `EMAIL_PASSWORD` (or other delivery credentials)
+   - `GEMINI_API_KEY` (or other LLM API keys)
+   - `EMAIL_USERNAME` and `EMAIL_PASSWORD`
 3. Customize the schedule in `.github/workflows/daily_summary.yml` if needed
 
 ## Configuration
@@ -94,7 +94,11 @@ See `config.yaml.example` for a complete example with comments.
 
 ### LLM Provider Options
 
-#### OpenAI (Default)
+#### Google Gemini (Default)
+- Pros: Cost-effective, fast, good quality
+- Cons: Newer API, may have fewer features than more established options
+
+#### OpenAI
 - Pros: Good quality, widely used
 - Cons: Not the cheapest option
 
