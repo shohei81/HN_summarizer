@@ -100,7 +100,7 @@ class GeminiProvider(LLMProvider):
     def _create_prompt(self, story: Dict[str, Any], content: Dict[str, Any]) -> str:
         """Create a prompt for the Gemini API."""
         return f"""
-Please summarize the following article from Hacker News:
+Please summarize the following article from Hacker News in Japanese:
 
 Title: {story.get('title', 'Unknown Title')}
 URL: {story.get('url', 'No URL')}
@@ -110,8 +110,8 @@ Comments: {story.get('descendants', 0)}
 Content:
 {content.get('content', 'No content available')[:4000]}
 
-Provide a concise summary (3-5 paragraphs) that captures the main points, key insights, and any important details. 
-The summary should be informative and helpful for someone who hasn't read the original article.
+記事の主要なポイント、重要な洞察、重要な詳細を捉えた簡潔な要約（3〜5段落）を日本語で提供してください。
+要約は元の記事を読んでいない人にとって有益で分かりやすいものにしてください。
 """
 
 class OpenAIProvider(LLMProvider):
@@ -359,7 +359,7 @@ class OllamaProvider(LLMProvider):
     def _create_prompt(self, story: Dict[str, Any], content: Dict[str, Any]) -> str:
         """Create a prompt for the Ollama API."""
         return f"""
-Please summarize the following article from Hacker News:
+Please summarize the following article from Hacker News in Japanese:
 
 Title: {story.get('title', 'Unknown Title')}
 URL: {story.get('url', 'No URL')}
@@ -369,8 +369,8 @@ Comments: {story.get('descendants', 0)}
 Content:
 {content.get('content', 'No content available')[:4000]}
 
-Provide a concise summary (3-5 paragraphs) that captures the main points, key insights, and any important details. 
-The summary should be informative and helpful for someone who hasn't read the original article.
+記事の主要なポイント、重要な洞察、重要な詳細を捉えた簡潔な要約（3〜5段落）を日本語で提供してください。
+要約は元の記事を読んでいない人にとって有益で分かりやすいものにしてください。
 """
 
 class Summarizer:
