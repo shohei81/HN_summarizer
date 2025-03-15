@@ -124,6 +124,17 @@ def _load_from_environment(config: Dict[str, Any]) -> None:
             email_config['username'] = os.environ.get('EMAIL_USERNAME')
         if not email_config.get('password'):
             email_config['password'] = os.environ.get('EMAIL_PASSWORD')
+        
+        # Get recipients from environment variable if available
+        recipients_env = os.environ.get('EMAIL_RECIPIENTS')
+        if recipients_env:
+            try:
+                # Parse comma-separated list of email addresses
+                recipients = [email.strip() for email in recipients_env.split(',')]
+                email_config['recipients'] = recipients
+            except Exception as e:
+                logger.error(f"Error parsing EMAIL_RECIPIENTS: {str(e)}")
+        
         config['delivery']['email'] = email_config
     
     elif config['delivery']['method'] == 'slack':
