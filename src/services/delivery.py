@@ -102,19 +102,25 @@ class EmailDelivery(DeliveryMethod):
     
     def _create_html_content(self, summaries: List[Dict[str, Any]]) -> str:
         """Create HTML content for email."""
+        # Create CSS style as a separate string to avoid f-string issues with backslashes
+        css_style = """
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                h1 { color: #2c3e50; }
+                h2 { color: #3498db; margin-top: 20px; }
+                .story { margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+                .meta { color: #7f8c8d; font-size: 0.9em; margin-bottom: 10px; }
+                .summary { line-height: 1.8; }
+                a { color: #3498db; text-decoration: none; }
+                a:hover { text-decoration: underline; }
+            </style>
+        """
+        
+        # Create HTML content with the date
         content = f"""
         <html>
         <head>
-            <style>
-                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                h1 {{ color: #2c3e50; }}
-                h2 {{ color: #3498db; margin-top: 20px; }}
-                .story {{ margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }}
-                .meta {{ color: #7f8c8d; font-size: 0.9em; margin-bottom: 10px; }}
-                .summary {{ line-height: 1.8; }}
-                a {{ color: #3498db; text-decoration: none; }}
-                a:hover {{ text-decoration: underline; }}
-            </style>
+            {css_style}
         </head>
         <body>
             <h1>Hacker News Top Stories - {time.strftime('%Y-%m-%d')}</h1>
