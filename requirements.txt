@@ -1,0 +1,15 @@
+# Core dependencies
+requests>=2.28.0
+beautifulsoup4>=4.11.0
+pyyaml>=6.0
+
+# For LLM providers
+# OpenAI is included by default, others are optional based on configuration
+openai>=1.0.0
+
+# Optional LLM providers (uncomment as needed)
+# anthropic>=0.5.0
+
+# For testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
