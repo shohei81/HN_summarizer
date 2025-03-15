@@ -1,0 +1,36 @@
+# HN Summarizer Configuration
+
+# Summarizer configuration
+summarizer:
+  # LLM provider to use: 'gemini', 'openai', 'anthropic', or 'ollama'
+  provider: gemini
+  
+  # Gemini configuration (if provider is 'gemini')
+  gemini_model: gemini-2.0-flash  # Flash is cheaper and faster than Pro
+  # gemini_api_key: # Set GEMINI_API_KEY environment variable
+  
+  # General summarizer settings
+  max_tokens: 500  # Maximum length of summary
+
+# Delivery configuration
+delivery:
+  # Delivery method: 'email', 'slack', or 'line'
+  method: email
+  
+  # Email configuration (if method is 'email')
+  email:
+    smtp_server: smtp.gmail.com
+    smtp_port: 587
+    # username: # Set EMAIL_USERNAME environment variable
+    # password: # Set EMAIL_PASSWORD environment variable
+    sender: syouhei.y.01@gmail.com  # Optional, defaults to username
+    # recipients: # Set EMAIL_RECIPIENTS environment variable (comma-separated list)
+    subject_template: "Hacker News Top Stories - {date}"
+
+# Security configuration
+security:
+  # Whether to load sensitive data from environment variables
+  use_environment_variables: true
+  
+  # Whether to encrypt API keys in the config file (not implemented yet)
+  encrypt_api_keys: false
