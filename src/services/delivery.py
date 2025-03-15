@@ -128,6 +128,9 @@ class EmailDelivery(DeliveryMethod):
         
         for i, summary in enumerate(summaries, 1):
             story = summary.get('story', {})
+            # Replace newlines with <br> tags before adding to the HTML
+            summary_text = summary.get('summary', 'No summary available').replace('\n', '<br>')
+            
             content += f"""
             <div class="story">
                 <h2>{i}. <a href="{story.get('url', '#')}">{story.get('title', 'Unknown Title')}</a></h2>
@@ -137,7 +140,7 @@ class EmailDelivery(DeliveryMethod):
                     <a href="https://news.ycombinator.com/item?id={story.get('id', '')}">Discuss on HN</a>
                 </div>
                 <div class="summary">
-                    {summary.get('summary', 'No summary available').replace('\n', '<br>')}
+                    {summary_text}
                 </div>
             </div>
             """
@@ -260,7 +263,12 @@ class SlackDelivery(DeliveryMethod):
             summary_text = summary.get('summary', 'No summary available')
             # Split long summaries into multiple blocks if needed
             if len(summary_text) > 3000:
-                parts = [summary_text[i:i+3000] for i in range(0, len(summary_text), 3000)]
+                # Create parts outside of f-string to avoid backslash issues
+                max_length = 3000
+                parts = []
+                for i in range(0, len(summary_text), max_length):
+                    parts.append(summary_text[i:i+max_length])
+                
                 for part in parts:
                     blocks.append({
                         "type": "section",
@@ -332,8 +340,12 @@ class LineDelivery(DeliveryMethod):
                 
                 # Split message if it's too long
                 if len(message) > self.max_message_length:
-                    parts = [message[i:i+self.max_message_length] 
-                            for i in range(0, len(message), self.max_message_length)]
+                    # Create parts outside of f-string to avoid backslash issues
+                    message_length = self.max_message_length
+                    parts = []
+                    for i in range(0, len(message), message_length):
+                        parts.append(message[i:i+message_length])
+                    
                     for part in parts:
                         self._send_line_message(part)
                         time.sleep(1)  # Avoid rate limiting
