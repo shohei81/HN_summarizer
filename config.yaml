@@ -23,7 +23,7 @@ delivery:
     smtp_port: 587
     # username: # Set EMAIL_USERNAME environment variable
     # password: # Set EMAIL_PASSWORD environment variable
-    sender: syouhei.y.01@gmail.com  # Optional, defaults to username
+    # sender: # Set EMAIL_SENDER environment variable (defaults to username if not set)
     # recipients: # Set EMAIL_RECIPIENTS environment variable (comma-separated list)
     subject_template: "Hacker News Top Stories - {date}"
 
