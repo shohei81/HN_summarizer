@@ -27,6 +27,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
+      - name: Debug Secrets
+        run: |
+          echo "Checking if secrets are available..."
+          if [ -n "${{ secrets.GEMINI_API_KEY }}" ]; then
+            echo "GEMINI_API_KEY is set"
+          else
+            echo "GEMINI_API_KEY is NOT set"
+          fi
+          
+          if [ -n "${{ secrets.EMAIL_USERNAME }}" ]; then
+            echo "EMAIL_USERNAME is set"
+          else
+            echo "EMAIL_USERNAME is NOT set"
+          fi
+      
       - name: Run HN Summarizer
         env:
           # LLM API keys
@@ -41,4 +56,11 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
-          python src/main.py --config config.yaml
+          echo "Environment variables check:"
+          if [ -n "$GEMINI_API_KEY" ]; then
+            echo "GEMINI_API_KEY environment variable is set"
+          else
+            echo "GEMINI_API_KEY environment variable is NOT set"
+          fi
+          
+          python src/main.py --config config.yaml --debug
