@@ -3,7 +3,7 @@ name: Daily HN Summary
 on:
   schedule:
     # Run at 8:00 UTC (adjust as needed)
-    - cron: '15 0 * * *'
+    - cron: '53 0 * * *'
   
   # Allow manual triggering
   workflow_dispatch:
