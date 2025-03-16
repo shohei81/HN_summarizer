@@ -52,16 +52,12 @@ jobs:
         env:
           # LLM API keys
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           
           # Delivery credentials
           EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
           EMAIL_RECIPIENTS: ${{ secrets.EMAIL_RECIPIENTS }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
           echo "Environment variables check:"
           if [ -n "$GEMINI_API_KEY" ]; then

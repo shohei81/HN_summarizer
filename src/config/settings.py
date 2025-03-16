@@ -107,14 +107,6 @@ def _load_from_environment(config: Dict[str, Any]) -> None:
         env_key = os.environ.get('GEMINI_API_KEY')
         if env_key and not config['summarizer'].get('gemini_api_key'):
             config['summarizer']['gemini_api_key'] = env_key
-    elif config['summarizer']['provider'] == 'openai':
-        env_key = os.environ.get('OPENAI_API_KEY')
-        if env_key and not config['summarizer'].get('openai_api_key'):
-            config['summarizer']['openai_api_key'] = env_key
-    elif config['summarizer']['provider'] == 'anthropic':
-        env_key = os.environ.get('ANTHROPIC_API_KEY')
-        if env_key and not config['summarizer'].get('anthropic_api_key'):
-            config['summarizer']['anthropic_api_key'] = env_key
     
     # Delivery credentials
     if config['delivery']['method'] == 'email':
@@ -141,15 +133,3 @@ def _load_from_environment(config: Dict[str, Any]) -> None:
             email_config['sender'] = sender_env
         
         config['delivery']['email'] = email_config
-    
-    elif config['delivery']['method'] == 'slack':
-        slack_config = config['delivery'].get('slack', {})
-        if not slack_config.get('webhook_url'):
-            slack_config['webhook_url'] = os.environ.get('SLACK_WEBHOOK_URL')
-        config['delivery']['slack'] = slack_config
-    
-    elif config['delivery']['method'] == 'line':
-        line_config = config['delivery'].get('line', {})
-        if not line_config.get('access_token'):
-            line_config['access_token'] = os.environ.get('LINE_ACCESS_TOKEN')
-        config['delivery']['line'] = line_config
