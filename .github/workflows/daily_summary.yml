@@ -41,6 +41,12 @@ jobs:
           else
             echo "EMAIL_USERNAME is NOT set"
           fi
+          
+          if [ -n "${{ secrets.EMAIL_SENDER }}" ]; then
+            echo "EMAIL_SENDER is set"
+          else
+            echo "EMAIL_SENDER is NOT set"
+          fi
       
       - name: Run HN Summarizer
         env:
@@ -52,6 +58,7 @@ jobs:
           # Delivery credentials
           EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
           EMAIL_RECIPIENTS: ${{ secrets.EMAIL_RECIPIENTS }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
@@ -61,6 +68,12 @@ jobs:
             echo "GEMINI_API_KEY environment variable is set"
           else
             echo "GEMINI_API_KEY environment variable is NOT set"
+          fi
+          
+          if [ -n "$EMAIL_SENDER" ]; then
+            echo "EMAIL_SENDER environment variable is set"
+          else
+            echo "EMAIL_SENDER environment variable is NOT set"
           fi
           
           python src/main.py --config config.yaml --debug
