@@ -135,6 +135,11 @@ def _load_from_environment(config: Dict[str, Any]) -> None:
             except Exception as e:
                 logger.error(f"Error parsing EMAIL_RECIPIENTS: {str(e)}")
         
+        # Get sender from environment variable if available
+        sender_env = os.environ.get('EMAIL_SENDER')
+        if sender_env and not email_config.get('sender'):
+            email_config['sender'] = sender_env
+        
         config['delivery']['email'] = email_config
     
     elif config['delivery']['method'] == 'slack':
