@@ -1,140 +1,49 @@
-# HN Summarizer
+# HN_summarizer
 
-A tool to fetch, summarize, and deliver top Hacker News stories on a daily basis.
+HN_summarizer is a GitHub Actions-based project that summarizes Hacker News articles using the Gemini LLM and sends the results via email.
 
 ## Features
 
-- **Automated Fetching**: Retrieves the top stories from Hacker News API daily
-- **Content Extraction**: Extracts the main content from article URLs
-- **AI Summarization**: Summarizes articles using Google's Gemini 1.5 Flash (with support for OpenAI, Anthropic, or local Ollama)
-- **Email Delivery**: Sends summaries via email (with support for Slack or LINE)
-- **Secure Configuration**: Handles sensitive credentials via environment variables
-- **Scheduled Execution**: Runs automatically using GitHub Actions
+- **LLM: Gemini Only**  
+  This project exclusively uses the Gemini LLM.
 
-## Requirements
+- **Delivery Method: Email Only**  
+  The summarized results are sent solely via email.
 
-- Python 3.8+
-- Dependencies listed in `requirements.txt`
-- API keys for the chosen LLM provider
-- Credentials for the chosen delivery method
+- **GitHub Actions Execution**  
+  The project runs entirely on GitHub Actions. There is no need to clone the repository locally; simply configure the required secrets in GitHub.
 
-## Installation
+## Setup Instructions
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/HN_summarizer.git
-   cd HN_summarizer
-   ```
+1. **Fork or Create the Repository**  
+   Fork the repository or create a new one on GitHub.
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+2. **Configure GitHub Secrets**  
+   Add the following secrets to your GitHub repository settings:
 
-3. Create a configuration file:
-   ```bash
-   cp config.yaml.example config.yaml
-   ```
+   ### GitHub Secrets Configuration
 
-4. Edit `config.yaml` with your settings and API keys, or set up environment variables.
+| Secret Name         | Description                                                            |
+|---------------------|------------------------------------------------------------------------|
+| `GEMINI_API_KEY`    | API key for accessing the Gemini LLM                                   |
+| `EMAIL_SENDER`      | The email address used as the sender                                   |
+| `EMAIL_RECIPIENTS`  | The email address(es) to which summaries are sent                      |
+| `EMAIL_USERNAME`    | The username for the email account used to send emails                 |
+| `EMAIL_PASSWORD`    | The password or app-specific password for the email account            |
 
-## Usage
+3. **Workflow Execution**  
+   Once the GitHub Secrets are configured, the GitHub Actions workflow will run automatically, summarize the Hacker News articles using Gemini, and send the summary to the specified email address.
 
-### Running Manually
+## Workflow Details
 
-Run the script with default settings:
+- The workflow configuration is located in the `.github/workflows/` directory.
+- You can adjust the trigger schedules and other settings within the workflow file as needed.
 
-```bash
-python src/main.py
-```
+## Notes
 
-Specify a custom configuration file:
-
-```bash
-python src/main.py --config my_config.yaml
-```
-
-Fetch a different number of top stories:
-
-```bash
-python src/main.py --top 5
-```
-
-Override the delivery method:
-
-```bash
-python src/main.py --delivery slack
-```
-
-Enable debug logging:
-
-```bash
-python src/main.py --debug
-```
-
-### Automated Execution with GitHub Actions
-
-The repository includes a GitHub Actions workflow that runs the script daily. To use it:
-
-1. Fork this repository
-2. Add your API keys and credentials as GitHub Secrets:
-   - `GEMINI_API_KEY` (or other LLM API keys)
-   - `EMAIL_USERNAME` and `EMAIL_PASSWORD`
-3. Customize the schedule in `.github/workflows/daily_summary.yml` if needed
-
-## Configuration
-
-The `config.yaml` file allows you to customize:
-
-- LLM provider (OpenAI, Anthropic, or Ollama)
-- Delivery method (email, Slack, or LINE)
-- Security settings
-
-See `config.yaml.example` for a complete example with comments.
-
-### LLM Provider Options
-
-#### Google Gemini (Default)
-- Pros: Cost-effective, fast, good quality
-- Cons: Newer API, may have fewer features than more established options
-
-#### OpenAI
-- Pros: Good quality, widely used
-- Cons: Not the cheapest option
-
-#### Anthropic Claude
-- Pros: Good at understanding context, competitive pricing
-- Cons: API may be less stable than OpenAI
-
-#### Ollama (Local LLM)
-- Pros: Free, no API costs, private
-- Cons: Requires local setup, quality may vary by model
-
-### Delivery Method Options
-
-#### Email
-- Good for personal use
-- Supports HTML formatting
-
-#### Slack
-- Good for team collaboration
-- Supports rich formatting with blocks
-
-#### LINE
-- Popular in Japan and parts of Asia
-- Good for mobile notifications
-
-## Security Considerations
-
-- API keys and credentials are sensitive information
-- Use environment variables when possible
-- GitHub Secrets for CI/CD
-- Be mindful of rate limits and API costs
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+- Since this project runs on GitHub Actions, there is no need to clone the repository locally.
+- Always manage sensitive information (such as API keys and email credentials) via GitHub Secrets.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the [MIT License](LICENSE).
