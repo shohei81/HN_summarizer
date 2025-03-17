@@ -59,6 +59,12 @@ def get_default_config() -> Dict[str, Any]:
                 'smtp_server': 'smtp.gmail.com',
                 'smtp_port': 587,
                 # Credentials should be provided via environment variables or config file
+            },
+            'slack': {
+                'username': 'HN Summarizer Bot',
+                'icon_emoji': ':newspaper:',
+                'max_summaries_per_message': 3,
+                # webhook_url should be provided via environment variables or config file
             }
         },
         'security': {
@@ -109,7 +115,11 @@ def _load_from_environment(config: Dict[str, Any]) -> None:
             config['summarizer']['gemini_api_key'] = env_key
     
     # Delivery credentials
-    if config['delivery']['method'] == 'email':
+    # Get delivery methods (support for comma-separated list)
+    delivery_methods = config['delivery']['method'].split(',')
+    
+    # Email configuration
+    if 'email' in delivery_methods:
         email_config = config['delivery'].get('email', {})
         # Only use environment variables if the config doesn't already have values
         if not email_config.get('username'):
@@ -133,3 +143,18 @@ def _load_from_environment(config: Dict[str, Any]) -> None:
             email_config['sender'] = sender_env
         
         config['delivery']['email'] = email_config
+    
+    # Slack configuration
+    if 'slack' in delivery_methods:
+        slack_config = config['delivery'].get('slack', {})
+        # Get webhook URL from environment variable if available
+        webhook_url_env = os.environ.get('SLACK_WEBHOOK_URL')
+        if webhook_url_env and not slack_config.get('webhook_url'):
+            slack_config['webhook_url'] = webhook_url_env
+        
+        # Get channel from environment variable if available (optional)
+        channel_env = os.environ.get('SLACK_CHANNEL')
+        if channel_env and not slack_config.get('channel'):
+            slack_config['channel'] = channel_env
+        
+        config['delivery']['slack'] = slack_config

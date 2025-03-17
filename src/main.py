@@ -22,8 +22,8 @@ def parse_args():
                         help='Path to configuration file')
     parser.add_argument('--top', type=int, default=10, 
                         help='Number of top stories to fetch (default: 10)')
-    parser.add_argument('--delivery', type=str, choices=['email', 'slack', 'line'], 
-                        help='Delivery method override')
+    parser.add_argument('--delivery', type=str, 
+                        help='Delivery method override (email, slack, or comma-separated for multiple)')
     parser.add_argument('--debug', action='store_true', 
                         help='Enable debug logging')
     return parser.parse_args()

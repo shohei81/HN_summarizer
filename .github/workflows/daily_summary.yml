@@ -47,6 +47,12 @@ jobs:
           else
             echo "EMAIL_SENDER is NOT set"
           fi
+          
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            echo "SLACK_WEBHOOK_URL is set"
+          else
+            echo "SLACK_WEBHOOK_URL is NOT set"
+          fi
       
       - name: Run HN Summarizer
         env:
@@ -58,6 +64,8 @@ jobs:
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
           EMAIL_RECIPIENTS: ${{ secrets.EMAIL_RECIPIENTS }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
         run: |
           echo "Environment variables check:"
           if [ -n "$GEMINI_API_KEY" ]; then
@@ -70,6 +78,12 @@ jobs:
             echo "EMAIL_SENDER environment variable is set"
           else
             echo "EMAIL_SENDER environment variable is NOT set"
+          fi
+          
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL environment variable is set"
+          else
+            echo "SLACK_WEBHOOK_URL environment variable is NOT set"
           fi
           
           python src/main.py --config config.yaml --debug

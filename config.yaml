@@ -14,7 +14,7 @@ summarizer:
 
 # Delivery configuration
 delivery:
-  # Delivery method: 'email', 'slack', or 'line'
+  # Delivery method: 'email', 'slack', or comma-separated for multiple (e.g., 'email,slack')
   method: email
   
   # Email configuration (if method is 'email')
@@ -26,6 +26,14 @@ delivery:
     # sender: # Set EMAIL_SENDER environment variable (defaults to username if not set)
     # recipients: # Set EMAIL_RECIPIENTS environment variable (comma-separated list)
     subject_template: "Hacker News Top Stories - {date}"
+  
+  # Slack configuration (if method is 'slack')
+  slack:
+    # webhook_url: # Set SLACK_WEBHOOK_URL environment variable
+    channel: "#hn-summaries"  # Optional: override the default channel in the webhook
+    username: "HN Summarizer Bot"  # Optional: bot name
+    icon_emoji: ":newspaper:"  # Optional: bot icon
+    max_summaries_per_message: 3  # Maximum number of summaries per message
 
 # Security configuration
 security:

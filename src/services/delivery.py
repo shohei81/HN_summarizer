@@ -291,102 +291,6 @@ class SlackDelivery(DeliveryMethod):
         
         return blocks
 
-class LineDelivery(DeliveryMethod):
-    """LINE delivery method."""
-    
-    def __init__(self, config: Dict[str, Any]):
-        """
-        Initialize the LINE delivery method.
-        
-        Args:
-            config: LINE configuration dictionary
-        """
-        self.access_token = config.get('access_token')
-        self.to = config.get('to')  # User ID or group ID
-        self.max_message_length = 5000  # LINE message length limit
-        
-        if not self.access_token:
-            raise ValueError("LINE access token is required")
-        
-        if not self.to:
-            raise ValueError("LINE recipient (user ID or group ID) is required")
-    
-    def send(self, summaries: List[Dict[str, Any]]) -> bool:
-        """
-        Send summaries to LINE.
-        
-        Args:
-            summaries: List of summary dictionaries
-            
-        Returns:
-            True if successful, False otherwise
-        """
-        try:
-            # Create message content
-            header = f"Hacker News Top Stories - {time.strftime('%Y-%m-%d')}\n\n"
-            
-            # Send header message
-            self._send_line_message(header)
-            
-            # Send each summary as a separate message
-            for i, summary in enumerate(summaries, 1):
-                story = summary.get('story', {})
-                
-                message = f"{i}. {story.get('title', 'Unknown Title')}\n"
-                message += f"URL: {story.get('url', 'No URL')}\n"
-                message += f"Points: {story.get('score', 0)} | "
-                message += f"Comments: {story.get('descendants', 0)}\n\n"
-                message += f"{summary.get('summary', 'No summary available')}"
-                
-                # Split message if it's too long
-                if len(message) > self.max_message_length:
-                    # Create parts outside of f-string to avoid backslash issues
-                    message_length = self.max_message_length
-                    parts = []
-                    for i in range(0, len(message), message_length):
-                        parts.append(message[i:i+message_length])
-                    
-                    for part in parts:
-                        self._send_line_message(part)
-                        time.sleep(1)  # Avoid rate limiting
-                else:
-                    self._send_line_message(message)
-                    time.sleep(1)  # Avoid rate limiting
-            
-            logger.info(f"Successfully sent {len(summaries)} summaries to LINE")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Error sending to LINE: {str(e)}")
-            return False
-    
-    def _send_line_message(self, message: str) -> None:
-        """Send a message to LINE."""
-        url = "https://api.line.me/v2/bot/message/push"
-        
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.access_token}"
-        }
-        
-        payload = {
-            "to": self.to,
-            "messages": [
-                {
-                    "type": "text",
-                    "text": message
-                }
-            ]
-        }
-        
-        response = requests.post(
-            url,
-            headers=headers,
-            json=payload,
-            timeout=10
-        )
-        response.raise_for_status()
-
 class DeliveryService:
     """
     Service for delivering summaries to various platforms.
@@ -400,43 +304,66 @@ class DeliveryService:
             config: Configuration dictionary for delivery
         """
         self.config = config
-        self.method = self._initialize_delivery_method()
+        self.methods = []
+        self._initialize_delivery_methods()
     
-    def _initialize_delivery_method(self) -> DeliveryMethod:
-        """Initialize the delivery method based on configuration."""
+    def _initialize_delivery_methods(self) -> None:
+        """Initialize delivery methods based on configuration."""
         method_name = self.config.get('method', 'email').lower()
         
-        if method_name == 'email':
-            return EmailDelivery(self.config.get('email', {}))
-        elif method_name == 'slack':
-            return SlackDelivery(self.config.get('slack', {}))
-        elif method_name == 'line':
-            return LineDelivery(self.config.get('line', {}))
+        # Support for multiple delivery methods (comma-separated)
+        if ',' in method_name:
+            method_names = [m.strip() for m in method_name.split(',')]
         else:
-            raise ValueError(f"Unsupported delivery method: {method_name}")
+            method_names = [method_name]
+        
+        for name in method_names:
+            if name == 'email':
+                self.methods.append(EmailDelivery(self.config.get('email', {})))
+            elif name == 'slack':
+                self.methods.append(SlackDelivery(self.config.get('slack', {})))
+            else:
+                logger.warning(f"Unsupported delivery method: {name}")
     
     def deliver(self, summaries: List[Dict[str, Any]]) -> bool:
         """
-        Deliver summaries using the configured method.
+        Deliver summaries using all configured methods.
         
         Args:
             summaries: List of summary dictionaries
             
         Returns:
-            True if successful, False otherwise
+            True if all deliveries were successful, False otherwise
         """
+        if not self.methods:
+            logger.error("No delivery methods configured")
+            return False
+        
         try:
-            logger.info(f"Delivering {len(summaries)} summaries via {self.config.get('method', 'unknown')}")
+            logger.info(f"Delivering {len(summaries)} summaries via {len(self.methods)} method(s)")
             
-            # Deliver using the initialized method
-            success = self.method.send(summaries)
+            # Track success of all delivery methods
+            all_success = True
             
-            if success:
-                logger.info("Delivery completed successfully")
+            # Deliver using each initialized method
+            for method in self.methods:
+                method_name = method.__class__.__name__
+                logger.info(f"Delivering via {method_name}")
+                
+                success = method.send(summaries)
+                
+                if success:
+                    logger.info(f"Delivery via {method_name} completed successfully")
+                else:
+                    logger.warning(f"Delivery via {method_name} failed")
+                    all_success = False
+            
+            if all_success:
+                logger.info("All deliveries completed successfully")
             else:
-                logger.warning("Delivery completed with errors")
+                logger.warning("Some deliveries failed")
             
-            return success
+            return all_success
             
         except Exception as e:
             logger.error(f"Error in delivery service: {str(e)}")
