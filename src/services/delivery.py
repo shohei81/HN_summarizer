@@ -141,12 +141,13 @@ class EmailDelivery(DeliveryMethod):
     # メールテンプレート内の処理例を修正
     def _format_summary_for_email(self, summary, index=None):
         index_prefix = f"{index}. " if index is not None else ""
+        story = summary.get('story', {})
         
         if summary.get('access_restricted', False):
             # アクセス制限のある記事は要約なしでタイトルとURLだけ表示
             return f"""
             <div class="story">
-                <h2>{index_prefix}<a href="{summary['url']}">{summary['title']}</a></h2>
+                <h2>{index_prefix}<a href="{story.get('url', '#')}">{story.get('title', 'Unknown Title')}</a></h2>
                 <p class="restricted"><em>このコンテンツはアクセス制限があるため要約できませんでした。</em></p>
             </div>
             """
@@ -157,10 +158,10 @@ class EmailDelivery(DeliveryMethod):
             
             return f"""
             <div class="story">
-                <h2>{index_prefix}<a href="{summary['url']}">{summary['title']}</a></h2>
+                <h2>{index_prefix}<a href="{story.get('url', '#')}">{story.get('title', 'Unknown Title')}</a></h2>
                 <div class="meta">
-                    {summary.get('by', '')} | 
-                    <a href="https://news.ycombinator.com/item?id={summary.get('id', '')}">Discuss on HN</a>
+                    {story.get('by', '')} | 
+                    <a href="https://news.ycombinator.com/item?id={story.get('id', '')}">Discuss on HN</a>
                 </div>
                 <div class="summary">
                     {summary_text}
@@ -254,11 +255,12 @@ class SlackDelivery(DeliveryMethod):
         
         for summary in summaries:
             # Add story header with title and URL
+            story = summary.get('story', {})
             blocks.append({
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"*<{summary.get('url', '#')}|{summary.get('title', 'Unknown Title')}>*"
+                    "text": f"*<{story.get('url', '#')}|{story.get('title', 'Unknown Title')}>*"
                 }
             })
             
