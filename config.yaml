@@ -33,7 +33,7 @@ delivery:
     channel: "#hn-summaries"  # Optional: override the default channel in the webhook
     username: "HN Summarizer Bot"  # Optional: bot name
     icon_emoji: ":newspaper:"  # Optional: bot icon
-    max_summaries_per_message: 3  # Maximum number of summaries per message
+    max_summaries_per_message: 10  # Maximum number of summaries per message
 
 # Security configuration
 security:
