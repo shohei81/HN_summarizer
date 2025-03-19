@@ -166,7 +166,7 @@ class SlackDelivery(DeliveryMethod):
         self.channel = config.get('channel')
         self.username = config.get('username', 'HN Summarizer Bot')
         self.icon_emoji = config.get('icon_emoji', ':newspaper:')
-        self.max_summaries_per_message = config.get('max_summaries_per_message', 3)
+        self.max_summaries_per_message = config.get('max_summaries_per_message', 10)
         
         if not self.webhook_url:
             raise ValueError("Slack webhook URL is required")
