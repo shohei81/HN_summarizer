@@ -113,6 +113,7 @@ class EmailDelivery(DeliveryMethod):
                 .summary { line-height: 1.8; }
                 a { color: #3498db; text-decoration: none; }
                 a:hover { text-decoration: underline; }
+                .restricted { color: #95a5a6; font-style: italic; }
             </style>
         """
         
@@ -127,23 +128,8 @@ class EmailDelivery(DeliveryMethod):
         """
         
         for i, summary in enumerate(summaries, 1):
-            story = summary.get('story', {})
-            # Replace newlines with <br> tags before adding to the HTML
-            summary_text = summary.get('summary', 'No summary available').replace('\n', '<br>')
-            
-            content += f"""
-            <div class="story">
-                <h2>{i}. <a href="{story.get('url', '#')}">{story.get('title', 'Unknown Title')}</a></h2>
-                <div class="meta">
-                    Points: {story.get('score', 0)} | 
-                    Comments: {story.get('descendants', 0)} | 
-                    <a href="https://news.ycombinator.com/item?id={story.get('id', '')}">Discuss on HN</a>
-                </div>
-                <div class="summary">
-                    {summary_text}
-                </div>
-            </div>
-            """
+            # Format each summary using the existing method
+            content += self._format_summary_for_email(summary, index=i)
         
         content += """
         </body>
@@ -151,6 +137,36 @@ class EmailDelivery(DeliveryMethod):
         """
         
         return content
+
+    # メールテンプレート内の処理例を修正
+    def _format_summary_for_email(self, summary, index=None):
+        index_prefix = f"{index}. " if index is not None else ""
+        
+        if summary.get('access_restricted', False):
+            # アクセス制限のある記事は要約なしでタイトルとURLだけ表示
+            return f"""
+            <div class="story">
+                <h2>{index_prefix}<a href="{summary['url']}">{summary['title']}</a></h2>
+                <p class="restricted"><em>このコンテンツはアクセス制限があるため要約できませんでした。</em></p>
+            </div>
+            """
+        else:
+            # 通常の要約付き記事
+            # Replace newlines with <br> tags before adding to the HTML
+            summary_text = summary.get('summary', 'No summary available').replace('\n', '<br>')
+            
+            return f"""
+            <div class="story">
+                <h2>{index_prefix}<a href="{summary['url']}">{summary['title']}</a></h2>
+                <div class="meta">
+                    {summary.get('by', '')} | 
+                    <a href="https://news.ycombinator.com/item?id={summary.get('id', '')}">Discuss on HN</a>
+                </div>
+                <div class="summary">
+                    {summary_text}
+                </div>
+            </div>
+            """
 
 class SlackDelivery(DeliveryMethod):
     """Slack delivery method."""
@@ -237,56 +253,53 @@ class SlackDelivery(DeliveryMethod):
         ]
         
         for summary in summaries:
-            story = summary.get('story', {})
-            
-            # Add story header
+            # Add story header with title and URL
             blocks.append({
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"*<{story.get('url', '#')}|{story.get('title', 'Unknown Title')}>*"
+                    "text": f"*<{summary.get('url', '#')}|{summary.get('title', 'Unknown Title')}>*"
                 }
             })
             
-            # Add metadata
-            blocks.append({
-                "type": "context",
-                "elements": [
-                    {
-                        "type": "mrkdwn",
-                        "text": f"Points: {story.get('score', 0)} | Comments: {story.get('descendants', 0)} | <https://news.ycombinator.com/item?id={story.get('id', '')}|Discuss on HN>"
-                    }
-                ]
-            })
-            
-            # Add summary
-            summary_text = summary.get('summary', 'No summary available')
-            # Split long summaries into multiple blocks if needed
-            if len(summary_text) > 3000:
-                # Create parts outside of f-string to avoid backslash issues
-                max_length = 3000
-                parts = []
-                for i in range(0, len(summary_text), max_length):
-                    parts.append(summary_text[i:i+max_length])
-                
-                for part in parts:
-                    blocks.append({
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": part
-                        }
-                    })
-            else:
+            # Check if content is access restricted
+            if summary.get('access_restricted', False):
+                # Add a note about restricted access
                 blocks.append({
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": summary_text
+                        "text": "_このコンテンツはアクセス制限があるため要約できませんでした。_"
                     }
                 })
+            else:
+                # Add summary for accessible content
+                summary_text = summary.get('summary', 'No summary available')
+                # Split long summaries into multiple blocks if needed
+                if len(summary_text) > 3000:
+                    max_length = 3000
+                    parts = []
+                    for i in range(0, len(summary_text), max_length):
+                        parts.append(summary_text[i:i+max_length])
+                    
+                    for part in parts:
+                        blocks.append({
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": part
+                            }
+                        })
+                else:
+                    blocks.append({
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": summary_text
+                        }
+                    })
             
-            # Add divider
+            # Add divider between stories
             blocks.append({"type": "divider"})
         
         return blocks
@@ -351,7 +364,6 @@ class DeliveryService:
                 logger.info(f"Delivering via {method_name}")
                 
                 success = method.send(summaries)
-                
                 if success:
                     logger.info(f"Delivery via {method_name} completed successfully")
                 else:
