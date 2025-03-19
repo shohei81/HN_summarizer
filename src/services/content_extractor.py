@@ -40,13 +40,31 @@ class ContentExtractor:
             url: The URL to extract content from
             
         Returns:
-            Dictionary containing extracted content and metadata
+            Dictionary containing extracted content and metadata,
+            with access_restricted=True if the content cannot be accessed
         """
         try:
             logger.debug(f"Fetching content from: {url}")
             
+            # Parse domain for later use
+            domain = urlparse(url).netloc
+            
             # Fetch the page
             response = self.session.get(url, timeout=self.timeout)
+            
+            # Handle access restrictions (401, 403, etc.)
+            if response.status_code in [401, 403, 407, 451]:
+                logger.warning(f"Access restricted for {url} (HTTP {response.status_code})")
+                return {
+                    'url': url,
+                    'domain': domain,
+                    'title': None,  # No title extracted
+                    'content': None,  # No content extracted
+                    'html': None,
+                    'extracted_at': time.time(),
+                    'access_restricted': True
+                }
+                
             response.raise_for_status()
             
             # Parse with BeautifulSoup
@@ -54,7 +72,6 @@ class ContentExtractor:
             
             # Extract basic metadata
             title = self._extract_title(soup)
-            domain = urlparse(url).netloc
             
             # Extract the main content
             content = self._extract_main_content(soup)
@@ -65,8 +82,9 @@ class ContentExtractor:
                 'domain': domain,
                 'title': title,
                 'content': content,
-                'html': response.text,  # Store the full HTML for potential further processing
-                'extracted_at': time.time()
+                'html': response.text,
+                'extracted_at': time.time(),
+                'access_restricted': False
             }
             
             content_length = len(content)
@@ -76,7 +94,17 @@ class ContentExtractor:
             
         except requests.RequestException as e:
             logger.error(f"Error fetching URL {url}: {str(e)}")
-            raise
+            
+            # Return restricted access result for request exceptions too
+            return {
+                'url': url,
+                'domain': urlparse(url).netloc,
+                'title': None,
+                'content': None,
+                'html': None,
+                'extracted_at': time.time(),
+                'access_restricted': True
+            }
         except Exception as e:
             logger.error(f"Error extracting content from {url}: {str(e)}")
             raise

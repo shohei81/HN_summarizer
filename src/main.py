@@ -64,7 +64,25 @@ def main():
                 logger.info(f"Extracting content from: {story['url']}")
                 content = content_extractor.extract(story['url'])
                 
-                # Summarize content
+                # Check if access is restricted
+                if content.get('access_restricted', False):
+                    # Add story with just title and URL, no summary
+                    logger.info(f"Access restricted for: {story['title']} - including without summary")
+                    summaries.append({
+                        'story': story,  # Include the original story data
+                        'content': {
+                            'url': story.get('url'),
+                            'domain': content.get('domain'),
+                            'title': story.get('title'),
+                            'content_length': 0,
+                        },
+                        'summary': "このコンテンツはアクセス制限があるため要約できませんでした。",
+                        'access_restricted': True,
+                        'summarized_at': time.time()
+                    })
+                    continue
+                
+                # Summarize content if accessible
                 logger.info(f"Summarizing: {story['title']}")
                 summary = summarizer.summarize(story, content)
                 

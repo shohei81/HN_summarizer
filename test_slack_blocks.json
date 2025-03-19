@@ -1,0 +1,47 @@
+[
+  {
+    "type": "header",
+    "text": {
+      "type": "plain_text",
+      "text": "Hacker News Top Stories - 2025-03-19",
+      "emoji": true
+    }
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "*<https://example.com/restricted|Access Restricted Story>*"
+    }
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "_\u3053\u306e\u30b3\u30f3\u30c6\u30f3\u30c4\u306f\u30a2\u30af\u30bb\u30b9\u5236\u9650\u304c\u3042\u308b\u305f\u3081\u8981\u7d04\u3067\u304d\u307e\u305b\u3093\u3067\u3057\u305f\u3002_"
+    }
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "*<https://example.com/regular|Regular Story>*"
+    }
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": "This is a regular story summary."
+    }
+  },
+  {
+    "type": "divider"
+  }
+]
