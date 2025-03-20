@@ -4,7 +4,9 @@ HN Summarizer - A tool to fetch, summarize, and deliver top Hacker News stories.
 """
 import logging
 import argparse
+import time
 from datetime import datetime
+from urllib.parse import urlparse
 
 from utils.logger import setup_logger
 from services.hn_fetcher import HNFetcher
@@ -89,6 +91,19 @@ def main():
                 summaries.append(summary)
             except Exception as e:
                 logger.error(f"Error processing story {story['title']}: {str(e)}")
+                # Add the story with just title and URL for access-restricted articles
+                summaries.append({
+                    'story': story,
+                    'content': {
+                        'url': story.get('url'),
+                        'domain': urlparse(story.get('url', '')).netloc,
+                        'title': story.get('title'),
+                        'content_length': 0,
+                    },
+                    'summary': "このコンテンツはアクセス制限があるため要約できませんでした。",
+                    'access_restricted': True,
+                    'summarized_at': time.time()
+                })
         
         # Deliver summaries
         if summaries:
