@@ -1,0 +1,13 @@
+Test passed! No KeyError was raised.
+
+            <div class="story">
+                <h2>1. <a href="#">Unknown Title</a></h2>
+                <div class="meta">
+                     | 
+                    <a href="https://news.ycombinator.com/item?id=">Discuss on HN</a>
+                </div>
+                <div class="summary">
+                    This is a test summary.
+                </div>
+            </div>
+            
