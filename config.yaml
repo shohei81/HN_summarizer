@@ -15,7 +15,7 @@ summarizer:
 # Delivery configuration
 delivery:
   # Delivery method: 'email', 'slack', or comma-separated for multiple (e.g., 'email,slack')
-  method: email
+  method: email,slack
   
   # Email configuration (if method is 'email')
   email:
