@@ -3,30 +3,30 @@ name: Daily HN Summary
 on:
   schedule:
     # Run at 8:00 UTC (adjust as needed)
-    - cron: '0 23 * * *'
-  
+    - cron: "0 23 * * *"
+
   # Allow manual triggering
   workflow_dispatch:
 
 jobs:
   summarize:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-      
+        uses: actions/checkout@v4
+
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
-          cache: 'pip'
-      
+          python-version: "3.10"
+          cache: "pip"
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      
+
       - name: Debug Secrets
         run: |
           echo "Checking if secrets are available..."
@@ -35,30 +35,30 @@ jobs:
           else
             echo "GEMINI_API_KEY is NOT set"
           fi
-          
+
           if [ -n "${{ secrets.EMAIL_USERNAME }}" ]; then
             echo "EMAIL_USERNAME is set"
           else
             echo "EMAIL_USERNAME is NOT set"
           fi
-          
+
           if [ -n "${{ secrets.EMAIL_SENDER }}" ]; then
             echo "EMAIL_SENDER is set"
           else
             echo "EMAIL_SENDER is NOT set"
           fi
-          
+
           if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
             echo "SLACK_WEBHOOK_URL is set"
           else
             echo "SLACK_WEBHOOK_URL is NOT set"
           fi
-      
+
       - name: Run HN Summarizer
         env:
           # LLM API keys
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          
+
           # Delivery credentials
           EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
@@ -73,17 +73,17 @@ jobs:
           else
             echo "GEMINI_API_KEY environment variable is NOT set"
           fi
-          
+
           if [ -n "$EMAIL_SENDER" ]; then
             echo "EMAIL_SENDER environment variable is set"
           else
             echo "EMAIL_SENDER environment variable is NOT set"
           fi
-          
+
           if [ -n "$SLACK_WEBHOOK_URL" ]; then
             echo "SLACK_WEBHOOK_URL environment variable is set"
           else
             echo "SLACK_WEBHOOK_URL environment variable is NOT set"
           fi
-          
+
           python src/main.py --config config.yaml --debug
