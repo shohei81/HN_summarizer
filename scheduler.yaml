@@ -1,0 +1,9 @@
+# Cloud Scheduler設定ファイル
+description: "HN Summarizer定期実行スケジューラ"
+schedule: "0 23 * * *" # 毎日23:00 UTC (日本時間8:00)に実行
+timeZone: "Asia/Tokyo"
+target:
+  type: "cloudRunJob"
+  cloudRunJob:
+    jobName: "projects/${PROJECT_ID}/locations/${REGION}/jobs/hn-summarizer-job"
+    region: "${REGION}"

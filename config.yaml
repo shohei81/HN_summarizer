@@ -4,19 +4,19 @@
 summarizer:
   # LLM provider to use: 'gemini', 'openai', 'anthropic', or 'ollama'
   provider: gemini
-  
+
   # Gemini configuration (if provider is 'gemini')
-  gemini_model: gemini-2.0-flash  # Flash is cheaper and faster than Pro
+  gemini_model: gemini-2.0-flash # Flash is cheaper and faster than Pro
   # gemini_api_key: # Set GEMINI_API_KEY environment variable
-  
+
   # General summarizer settings
-  max_tokens: 500  # Maximum length of summary
+  max_tokens: 500 # Maximum length of summary
 
 # Delivery configuration
 delivery:
   # Delivery method: 'email', 'slack', or comma-separated for multiple (e.g., 'email,slack')
-  method: email,slack
-  
+  method: email
+
   # Email configuration (if method is 'email')
   email:
     smtp_server: smtp.gmail.com
@@ -26,19 +26,25 @@ delivery:
     # sender: # Set EMAIL_SENDER environment variable (defaults to username if not set)
     # recipients: # Set EMAIL_RECIPIENTS environment variable (comma-separated list)
     subject_template: "Hacker News Top Stories - {date}"
-  
+
   # Slack configuration (if method is 'slack')
   slack:
     # webhook_url: # Set SLACK_WEBHOOK_URL environment variable
-    channel: "#hn-summaries"  # Optional: override the default channel in the webhook
-    username: "HN Summarizer Bot"  # Optional: bot name
-    icon_emoji: ":newspaper:"  # Optional: bot icon
-    max_summaries_per_message: 1  # Maximum number of summaries per message
+    channel: "#hn-summaries" # Optional: override the default channel in the webhook
+    username: "HN Summarizer Bot" # Optional: bot name
+    icon_emoji: ":newspaper:" # Optional: bot icon
+    max_summaries_per_message: 1 # Maximum number of summaries per message
 
 # Security configuration
 security:
   # Whether to load sensitive data from environment variables
   use_environment_variables: true
-  
+
+  # Whether to load sensitive data from Google Cloud Secret Manager
+  use_secret_manager: true
+
+  # GCP project ID for Secret Manager (if empty, will use GCP_PROJECT environment variable)
+  secret_manager_project: ""
+
   # Whether to encrypt API keys in the config file (not implemented yet)
   encrypt_api_keys: false

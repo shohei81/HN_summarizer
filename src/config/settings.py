@@ -7,6 +7,14 @@ import os
 import yaml
 from typing import Dict, Any, Optional
 
+# Import Secret Manager client library
+try:
+    from google.cloud import secretmanager
+    from google.cloud.secretmanager_v1.types import AccessSecretVersionResponse
+    SECRET_MANAGER_AVAILABLE = True
+except ImportError:
+    SECRET_MANAGER_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -72,6 +80,8 @@ def get_default_config() -> Dict[str, Any]:
         },
         "security": {
             "use_environment_variables": True,
+            "use_secret_manager": False,  # Whether to use GCP Secret Manager
+            "secret_manager_project": "",  # GCP project ID for Secret Manager
             "encrypt_api_keys": False,
         },
     }
@@ -102,7 +112,127 @@ def validate_config(config: Dict[str, Any]) -> Dict[str, Any]:
     if config.get("security", {}).get("use_environment_variables", True):
         _load_from_environment(config)
 
+    # Check for Secret Manager if configured
+    if config.get("security", {}).get("use_secret_manager", False):
+        if SECRET_MANAGER_AVAILABLE:
+            _load_from_secret_manager(config)
+        else:
+            logger.warning("Secret Manager is enabled but the library is not available. "
+                          "Install google-cloud-secret-manager to use this feature.")
+
     return config
+
+
+def _load_from_secret_manager(config: Dict[str, Any]) -> None:
+    """
+    Load sensitive configuration from Google Cloud Secret Manager.
+
+    Args:
+        config: Configuration dictionary to update
+    """
+    try:
+        # Get project ID from config or environment variable
+        project_id = config.get("security", {}).get("secret_manager_project", "")
+        if not project_id:
+            project_id = os.environ.get("GCP_PROJECT")
+            if not project_id:
+                logger.error("No project ID specified for Secret Manager. "
+                            "Set 'secret_manager_project' in config or GCP_PROJECT environment variable.")
+                return
+
+        # Create the Secret Manager client
+        client = secretmanager.SecretManagerServiceClient()
+
+        # LLM API keys
+        if config["summarizer"]["provider"] == "gemini" and not config["summarizer"].get("gemini_api_key"):
+            secret_name = f"projects/{project_id}/secrets/gemini-api-key/versions/latest"
+            try:
+                response = client.access_secret_version(request={"name": secret_name})
+                config["summarizer"]["gemini_api_key"] = response.payload.data.decode("UTF-8")
+                logger.info("Loaded GEMINI_API_KEY from Secret Manager")
+            except Exception as e:
+                logger.warning(f"Failed to load GEMINI_API_KEY from Secret Manager: {str(e)}")
+
+        # Get delivery methods
+        delivery_methods = config["delivery"]["method"].split(",")
+
+        # Email configuration
+        if "email" in delivery_methods:
+            email_config = config["delivery"].get("email", {})
+
+            # Email username
+            if not email_config.get("username"):
+                secret_name = f"projects/{project_id}/secrets/email-username/versions/latest"
+                try:
+                    response = client.access_secret_version(request={"name": secret_name})
+                    email_config["username"] = response.payload.data.decode("UTF-8")
+                    logger.info("Loaded EMAIL_USERNAME from Secret Manager")
+                except Exception as e:
+                    logger.warning(f"Failed to load EMAIL_USERNAME from Secret Manager: {str(e)}")
+
+            # Email password
+            if not email_config.get("password"):
+                secret_name = f"projects/{project_id}/secrets/email-password/versions/latest"
+                try:
+                    response = client.access_secret_version(request={"name": secret_name})
+                    email_config["password"] = response.payload.data.decode("UTF-8")
+                    logger.info("Loaded EMAIL_PASSWORD from Secret Manager")
+                except Exception as e:
+                    logger.warning(f"Failed to load EMAIL_PASSWORD from Secret Manager: {str(e)}")
+
+            # Email sender
+            if not email_config.get("sender"):
+                secret_name = f"projects/{project_id}/secrets/email-sender/versions/latest"
+                try:
+                    response = client.access_secret_version(request={"name": secret_name})
+                    email_config["sender"] = response.payload.data.decode("UTF-8")
+                    logger.info("Loaded EMAIL_SENDER from Secret Manager")
+                except Exception as e:
+                    logger.warning(f"Failed to load EMAIL_SENDER from Secret Manager: {str(e)}")
+
+            # Email recipients
+            if not email_config.get("recipients"):
+                secret_name = f"projects/{project_id}/secrets/email-recipients/versions/latest"
+                try:
+                    response = client.access_secret_version(request={"name": secret_name})
+                    recipients_str = response.payload.data.decode("UTF-8")
+                    recipients = [email.strip() for email in recipients_str.split(",")]
+                    email_config["recipients"] = recipients
+                    logger.info("Loaded EMAIL_RECIPIENTS from Secret Manager")
+                except Exception as e:
+                    logger.warning(f"Failed to load EMAIL_RECIPIENTS from Secret Manager: {str(e)}")
+
+            config["delivery"]["email"] = email_config
+
+        # Slack configuration
+        if "slack" in delivery_methods:
+            slack_config = config["delivery"].get("slack", {})
+
+            # Slack webhook URL
+            if not slack_config.get("webhook_url"):
+                secret_name = f"projects/{project_id}/secrets/slack-webhook-url/versions/latest"
+                try:
+                    response = client.access_secret_version(request={"name": secret_name})
+                    slack_config["webhook_url"] = response.payload.data.decode("UTF-8")
+                    logger.info("Loaded SLACK_WEBHOOK_URL from Secret Manager")
+                except Exception as e:
+                    logger.warning(f"Failed to load SLACK_WEBHOOK_URL from Secret Manager: {str(e)}")
+
+            # Slack channel (optional)
+            if not slack_config.get("channel"):
+                secret_name = f"projects/{project_id}/secrets/slack-channel/versions/latest"
+                try:
+                    response = client.access_secret_version(request={"name": secret_name})
+                    slack_config["channel"] = response.payload.data.decode("UTF-8")
+                    logger.info("Loaded SLACK_CHANNEL from Secret Manager")
+                except Exception as e:
+                    # This is optional, so just log at debug level
+                    logger.debug(f"Failed to load SLACK_CHANNEL from Secret Manager: {str(e)}")
+
+            config["delivery"]["slack"] = slack_config
+
+    except Exception as e:
+        logger.error(f"Error loading configuration from Secret Manager: {str(e)}")
 
 
 def _load_from_environment(config: Dict[str, Any]) -> None:
