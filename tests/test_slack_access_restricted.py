@@ -1,28 +1,23 @@
 #!/usr/bin/env python3
 """
-Test script to verify handling of access-restricted stories.
+Test script to verify handling of access-restricted stories in Slack delivery.
 """
 
 import sys
 import os
 import time
+import json
 
 # Add src directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "src")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
-from services.delivery import EmailDelivery
+from services.delivery import SlackDelivery
 
 
 def main():
-    """Test handling of access-restricted stories."""
-    # Create a mock EmailDelivery instance
-    email_delivery = EmailDelivery(
-        {
-            "username": "test@example.com",
-            "password": "password",
-            "recipients": ["recipient@example.com"],
-        }
-    )
+    """Test handling of access-restricted stories in Slack delivery."""
+    # Create a mock SlackDelivery instance
+    slack_delivery = SlackDelivery({"webhook_url": "https://hooks.slack.com/services/xxx/yyy/zzz"})
 
     # Create a mock story with access restrictions
     restricted_story = {
@@ -65,24 +60,16 @@ def main():
         "summarized_at": time.time(),
     }
 
-    # Test formatting both stories
-    print("=== Access Restricted Story ===")
-    restricted_html = email_delivery._format_summary_for_email(restricted_story, index=1)
-    print(restricted_html)
+    # Test creating message blocks with both stories
+    blocks = slack_delivery._create_message_blocks([restricted_story, regular_story])
 
-    print("\n=== Regular Story ===")
-    regular_html = email_delivery._format_summary_for_email(regular_story, index=2)
-    print(regular_html)
+    # Print the blocks as JSON for inspection
+    print(json.dumps(blocks, indent=2))
 
-    # Test creating HTML content with both stories
-    print("\n=== Complete HTML Email ===")
-    html_content = email_delivery._create_html_content([restricted_story, regular_story])
-    print(html_content)
-
-    # Write the HTML content to a file for inspection
-    with open("test_email.html", "w") as f:
-        f.write(html_content)
-    print("\nHTML content written to test_email.html")
+    # Write the blocks to a file for inspection
+    with open(os.path.join("output", "test_slack_blocks.json"), "w") as f:
+        json.dump(blocks, f, indent=2)
+    print("\nSlack blocks written to test_slack_blocks.json")
 
 
 if __name__ == "__main__":
