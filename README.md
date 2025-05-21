@@ -9,7 +9,7 @@ HN Summarizer is a project designed for deployment on Google Cloud Platform (Clo
     - **Email**: Send summaries to specified email addresses.
     - **Slack**: Post summaries to a Slack channel using webhooks.
     - **Multiple Methods**: Configure to send to both email and Slack simultaneously.
-- **Cloud Native**: Built for deployment on Google Cloud Platform, leveraging Cloud Run for serving and Cloud Scheduler for automated execution.
+- **Cloud Native**: Built for deployment on Google Cloud Platform, leveraging Cloud Run for job execution and Cloud Scheduler for automated execution.
 
 ## GCP Deployment and Operations
 
@@ -17,7 +17,7 @@ This section details how to deploy and operate the HN Summarizer on Google Cloud
 
 ### Overview
 
-The application is packaged as a Docker container and deployed to Cloud Run. Google Cloud Scheduler is used to trigger the service on a defined schedule (e.g., daily) to fetch, summarize, and deliver news. Secrets are managed using Google Cloud Secret Manager.
+The application is packaged as a Docker container and deployed as a **Cloud Run Job**. Google Cloud Scheduler is used to trigger this job on a defined schedule (e.g., daily) to fetch, summarize, and deliver news. Secrets are managed using Google Cloud Secret Manager.
 
 ### Prerequisites for Deployment
 
@@ -43,10 +43,10 @@ Before you begin, ensure you have the following:
     ```bash
     # Switch to email delivery
     ./switch_delivery.py email
-    
+
     # Switch to Slack delivery
     ./switch_delivery.py slack
-    
+
     # Switch to both email and Slack
     ./switch_delivery.py email,slack
     ```
@@ -69,8 +69,8 @@ Create the following secrets in Secret Manager (the names/IDs below are what the
 
 **Permissions:**
 
-*   The Cloud Run service's runtime service account needs the **"Secret Manager Secret Accessor"** (`roles/secretmanager.secretAccessor`) IAM role for *each* of the secrets listed above, or on the project/folder level if appropriate.
-*   The application also requires the `GCP_PROJECT_ID` environment variable to be set in the Cloud Run service. The `deploy_to_gcp.sh` script handles setting this automatically during deployment.
+*   The Cloud Run Job's runtime service account needs the **"Secret Manager Secret Accessor"** (`roles/secretmanager.secretAccessor`) IAM role for *each* of the secrets listed above, or on the project/folder level if appropriate.
+*   The application also requires the `GCP_PROJECT_ID` environment variable to be set in the Cloud Run Job. The `deploy_to_gcp.sh` script handles setting this automatically during deployment.
 
 ### Containerization - `Dockerfile`
 
@@ -88,7 +88,7 @@ The `deploy_to_gcp.sh` script automates the build and deployment process.
     Open `deploy_to_gcp.sh` and customize the following variables at the top of the script, or set them as environment variables before running the script:
     *   `GCP_PROJECT_ID`: Your Google Cloud Project ID.
     *   `GCP_REGION`: The GCP region for your services (e.g., `us-central1`).
-    *   `CLOUD_RUN_SERVICE_NAME`: The name for your Cloud Run service (e.g., `hn-summarizer`).
+    *   `CLOUD_RUN_SERVICE_NAME`: The name for your Cloud Run Job (e.g., `hn-summarizer`). This will be used as the job name.
     *   `ARTIFACT_REGISTRY_REPOSITORY`: The name for your Artifact Registry repository (e.g., `hn-summarizer-repo`).
     *   `CLOUD_RUN_SERVICE_ACCOUNT` (Optional): If you want Cloud Run to use a specific service account, set its email here. Otherwise, it defaults to the Compute Engine default service account. Ensure this service account has Secret Accessor rights.
 
@@ -101,48 +101,53 @@ The `deploy_to_gcp.sh` script automates the build and deployment process.
     *   Build the Docker image using the `Dockerfile`.
     *   Tag the image.
     *   Push the image to your Artifact Registry repository.
-    *   Deploy the image to Cloud Run, setting the `GCP_PROJECT_ID` environment variable.
+    *   Deploy the image as a Cloud Run Job, setting the `GCP_PROJECT_ID` environment variable.
 
 ### Automating with Cloud Scheduler
 
-To run the HN Summarizer application automatically on a schedule (e.g., daily), you can use Google Cloud Scheduler to trigger your deployed Cloud Run service.
+To run the HN Summarizer application automatically on a schedule (e.g., daily), you can use Google Cloud Scheduler to trigger your deployed **Cloud Run Job**.
 
 **Prerequisites:**
 
 Before creating the Cloud Scheduler job, ensure you have the following:
 
-1.  **Cloud Run Service Deployed**: The HN Summarizer application must be successfully deployed to Cloud Run, and you should have its HTTPS URL (this is output by the `deploy_to_gcp.sh` script).
-2.  **GCP Project ID**: Your Google Cloud Project ID.
-3.  **Cloud Run Service Details**: The name of your Cloud Run service and the GCP region it's deployed in.
-4.  **Scheduler Service Account**: A dedicated Google Cloud service account that Cloud Scheduler will use to invoke the Cloud Run service.
-    *   This service account **must** have the `roles/run.invoker` IAM permission granted on your Cloud Run service.
-    *   You can create a new service account for this purpose (e.g., `hn-scheduler-sa@your-project-id.iam.gserviceaccount.com`).
+1.  **Cloud Run Job Deployed**: The HN Summarizer application must be successfully deployed as a Cloud Run Job using the `./deploy_to_gcp.sh` script. The `CLOUD_RUN_SERVICE_NAME` variable in the script defines your Cloud Run Job name.
+2.  **GCP Project ID**: Your Google Cloud Project ID (as used in `deploy_to_gcp.sh`).
+3.  **Cloud Run Job Region**: The GCP region where your Cloud Run Job is deployed (as specified by `GCP_REGION` in `deploy_to_gcp.sh`).
+4.  **Scheduler Invoker Service Account**: A dedicated Google Cloud service account that Cloud Scheduler will use to invoke the Cloud Run Job.
+    *   This service account **must** have the **"Cloud Run Invoker"** (`roles/run.invoker`) IAM permission granted on your Cloud Run Job (e.g., `hn-summarizer`) or at the project level.
+    *   You can create a new service account for this purpose (e.g., `hn-scheduler-invoker-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com`).
 
 **Creating the Cloud Scheduler Job:**
 
-You can create the Cloud Scheduler job using the `gcloud` command-line tool. Below is an example command:
+You can create the Cloud Scheduler job using the `gcloud` command-line tool. Use the `CLOUD_RUN_SERVICE_NAME` (for `--job-name`) and `GCP_REGION` (for `--job-region` and `--location`) values from your `deploy_to_gcp.sh` script or environment variables.
 
 ```bash
-gcloud scheduler jobs create http YOUR_JOB_NAME \
+# Replace placeholders with your actual values
+GCP_PROJECT_ID="YOUR_GCP_PROJECT_ID"  # Your Google Cloud Project ID
+CLOUD_RUN_JOB_NAME="YOUR_CLOUD_RUN_JOB_NAME"  # Matches CLOUD_RUN_SERVICE_NAME from deploy_to_gcp.sh (e.g., hn-summarizer)
+CLOUD_RUN_JOB_REGION="YOUR_JOB_REGION" # Matches GCP_REGION from deploy_to_gcp.sh (e.g., us-central1)
+SCHEDULER_JOB_NAME="YOUR_SCHEDULER_JOB_NAME" # e.g., hn-summarizer-trigger
+SCHEDULER_INVOKER_SA="YOUR_SCHEDULER_SA_EMAIL" # e.g., scheduler-invoker@${GCP_PROJECT_ID}.iam.gserviceaccount.com
+
+gcloud scheduler jobs create cloud-run-job ${SCHEDULER_JOB_NAME} \
   --schedule "0 23 * * *" \
-  --uri "YOUR_CLOUD_RUN_SERVICE_URL" \
-  --http-method POST \
-  --oidc-service-account-email "YOUR_SCHEDULER_SERVICE_ACCOUNT_EMAIL" \
-  --oidc-token-audience "YOUR_CLOUD_RUN_SERVICE_URL" \
-  --location "YOUR_GCP_REGION" \
-  --description "Triggers the HN Summarizer Cloud Run service daily." \
-  --project "YOUR_GCP_PROJECT_ID"
+  --job-name "${CLOUD_RUN_JOB_NAME}" \
+  --job-region "${CLOUD_RUN_JOB_REGION}" \
+  --service-account-email "${SCHEDULER_INVOKER_SA}" \
+  --location "${CLOUD_RUN_JOB_REGION}" \ # Typically same as job region
+  --description "Triggers the HN Summarizer Cloud Run Job daily." \
+  --project "${GCP_PROJECT_ID}"
 ```
 
 **Explanation of Parameters:**
 
-*   `YOUR_JOB_NAME`: A unique name for your scheduler job (e.g., `hn-summarizer-trigger`).
-*   `--schedule`: A cron expression defining the job's frequency. The example `"0 23 * * *"` runs the job daily at 11 PM UTC. Adjust as needed.
-*   `--uri`: The full HTTPS URL of your deployed Cloud Run service. You can get this from the output of the `deploy_to_gcp.sh` script, the `gcloud run services describe YOUR_CLOUD_RUN_SERVICE_NAME --region YOUR_GCP_REGION --format 'value(status.url)'` command, or from the GCP Console.
-*   `--http-method`: The HTTP method to use for the request. `POST` is generally recommended for triggering actions. Your Cloud Run service's `main.py` is set up to handle `POST` requests to its root path for triggering the summarization process.
-*   `--oidc-service-account-email`: The email address of the service account that Cloud Scheduler will use to authenticate to your Cloud Run service (e.g., `hn-scheduler-sa@your-project-id.iam.gserviceaccount.com`).
-*   `--oidc-token-audience`: This critical parameter **must be set to the same value as `--uri`** (the URL of your Cloud Run service). It ensures that the OIDC token generated by the scheduler is specifically intended for invoking your Cloud Run service, enhancing security.
-*   `--location`: The GCP region where your Cloud Scheduler job will run. It's advisable to choose the same region as your Cloud Run service for lower latency and cost.
+*   `YOUR_SCHEDULER_JOB_NAME` (or `${SCHEDULER_JOB_NAME}` in example): A unique name for your scheduler job.
+*   `--schedule`: A cron expression defining the job's frequency. The example `"0 23 * * *"` runs the job daily at 11 PM UTC. Adjust as needed. You can also add `--time-zone "Asia/Tokyo"` if you prefer to define the schedule in a specific timezone.
+*   `--job-name`: The name of your deployed Cloud Run Job (this corresponds to `CLOUD_RUN_SERVICE_NAME` from `deploy_to_gcp.sh`).
+*   `--job-region`: The GCP region where your Cloud Run Job is deployed.
+*   `--service-account-email`: The email address of the service account that Cloud Scheduler will use to invoke the Cloud Run Job. This service account needs the `roles/run.invoker` permission on the target Cloud Run Job.
+*   `--location`: The GCP region where your Cloud Scheduler job itself will run. It's advisable to choose the same region as your Cloud Run Job.
 *   `--description`: A human-readable description for your scheduler job.
 *   `--project`: Your GCP Project ID.
 
@@ -150,16 +155,16 @@ gcloud scheduler jobs create http YOUR_JOB_NAME \
 
 Correct IAM permissions are crucial for the application to function:
 
-*   **Cloud Run Service's Runtime Service Account** (either Compute Engine default or the one specified in `deploy_to_gcp.sh`):
+*   **Cloud Run Job's Runtime Service Account** (either Compute Engine default or the one specified in `CLOUD_RUN_SERVICE_ACCOUNT` in `deploy_to_gcp.sh`):
     *   `roles/secretmanager.secretAccessor`: To access all the application secrets stored in Secret Manager.
     *   `roles/cloudtrace.agent`: (Recommended) For Cloud Trace integration.
     *   `roles/logging.logWriter`: (Usually default) For writing logs to Cloud Logging.
-*   **Cloud Scheduler Service Account** (the one specified by `--oidc-service-account-email`):
-    *   `roles/run.invoker`: To allow Cloud Scheduler to trigger your Cloud Run service.
+*   **Cloud Scheduler Service Account** (the one specified by `--service-account-email` when creating the scheduler job):
+    *   `roles/run.invoker`: To allow Cloud Scheduler to trigger your Cloud Run **Job**.
 *   **User/CI/CD Principal running `deploy_to_gcp.sh`**:
     *   `roles/artifactregistry.writer` (or `roles/artifactregistry.admin`): To push Docker images to Artifact Registry. (The script can create the repository if it doesn't exist, which might require `artifactregistry.admin` or more granular `artifactregistry.repositories.create` permissions).
-    *   `roles/run.admin`: To deploy and manage Cloud Run services.
-    *   `roles/iam.serviceAccountUser`: To act as/impersonate service accounts if necessary during deployment (e.g., if the Cloud Run service is configured to run as a specific service account).
+    *   `roles/run.admin`: To deploy and manage Cloud Run services **and jobs**.
+    *   `roles/iam.serviceAccountUser`: To act as/impersonate service accounts if necessary during deployment (e.g., if the Cloud Run Job is configured to run as a specific service account).
     *   `roles/storage.objectAdmin` (or more granular permissions): If Artifact Registry uses Cloud Storage buckets for storing images (which it does by default).
 
 ## Slack Webhook Setup
