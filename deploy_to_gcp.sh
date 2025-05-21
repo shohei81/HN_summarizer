@@ -4,10 +4,10 @@
 set -e
 
 # Define variables - User should customize these
-GCP_PROJECT_ID="${GCP_PROJECT_ID:-your-gcp-project-id}" # Get from env var or set a default
-GCP_REGION="${GCP_REGION:-us-central1}" # Get from env var or set a default
-CLOUD_RUN_SERVICE_NAME="${CLOUD_RUN_SERVICE_NAME:-hn-summarizer}" # Get from env var or set a default
-ARTIFACT_REGISTRY_REPOSITORY="${ARTIFACT_REGISTRY_REPOSITORY:-hn-summarizer-repo}" # Repository name in Artifact Registry
+GCP_PROJECT_ID="${GCP_PROJECT_ID:-your-gcp-project-id}" # Get from env var or set YOUR GCP PROJECT ID
+GCP_REGION="${GCP_REGION:-us-central1}" # Get from env var or set your preferred region
+CLOUD_RUN_SERVICE_NAME="${CLOUD_RUN_SERVICE_NAME:-hn-summarizer}" # Get from env var or set your job name
+ARTIFACT_REGISTRY_REPOSITORY="${ARTIFACT_REGISTRY_REPOSITORY:-hn-summarizer-repo}" # Get from env var or set your repository name
 IMAGE_NAME="hn-summarizer-app" # Name of the Docker image
 
 # Construct the full image path in Artifact Registry
@@ -59,7 +59,7 @@ gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" -q
 
 # --- Build the Docker image ---
 echo "Building Docker image: ${IMAGE_NAME}..."
-docker build -t "${IMAGE_NAME}" . -f Dockerfile
+docker build --platform linux/amd64 -t "${IMAGE_NAME}" . -f Dockerfile
 
 # --- Tag the Docker image for Artifact Registry ---
 echo "Tagging image as ${IMAGE_TAG}..."
@@ -72,8 +72,8 @@ echo "Pushing image to Artifact Registry: ${IMAGE_TAG}..."
 # gcloud artifacts repositories create "${ARTIFACT_REGISTRY_REPOSITORY}" --repository-format=docker --location="${GCP_REGION}" --description="Repository for HN Summarizer" --async
 docker push "${IMAGE_TAG}"
 
-# --- Deploy to Cloud Run ---
-echo "Deploying to Cloud Run service: ${CLOUD_RUN_SERVICE_NAME} in region ${GCP_REGION}..."
+# --- Deploy to Cloud Run Job ---
+echo "Deploying to Cloud Run Job: ${CLOUD_RUN_SERVICE_NAME} in region ${GCP_REGION}..."
 
 # Define environment variables to be set in Cloud Run.
 # The application will use GCP_PROJECT_ID to construct secret resource names.
@@ -85,29 +85,27 @@ RUN_ENV_VARS="GCP_PROJECT_ID=${GCP_PROJECT_ID}"
 # Service account for Cloud Run - replace with your service account if you have a specific one
 # It needs roles/secretmanager.secretAccessor for the secrets used.
 # And roles/cloudtrace.agent, roles/logging.logWriter (usually default)
-CLOUD_RUN_SERVICE_ACCOUNT="${CLOUD_RUN_SERVICE_ACCOUNT:-}" # Optional: specific service account email
+CLOUD_RUN_SERVICE_ACCOUNT="${CLOUD_RUN_SERVICE_ACCOUNT:-}" # Optional: Set via env var or leave empty to use default SA for jobs
 
 SERVICE_ACCOUNT_FLAG=""
 if [ -n "$CLOUD_RUN_SERVICE_ACCOUNT" ]; then
   SERVICE_ACCOUNT_FLAG="--service-account=${CLOUD_RUN_SERVICE_ACCOUNT}"
 fi
 
-# Allow unauthenticated invocations if you want to call it via HTTP directly (e.g. for testing)
-# For Cloud Scheduler, the scheduler service account needs roles/run.invoker
-ALLOW_UNAUTHENTICATED_FLAG="--allow-unauthenticated" # Remove if only invoked by authenticated sources like Scheduler
+# For Cloud Run Jobs, --allow-unauthenticated is not applicable in the same way as services.
+# Invocation permissions are typically handled by IAM for the principal triggering the job (e.g., Cloud Scheduler's service account).
 
-gcloud run deploy "${CLOUD_RUN_SERVICE_NAME}" \
+gcloud run jobs deploy "${CLOUD_RUN_SERVICE_NAME}" \
   --image "${IMAGE_TAG}" \
   --region "${GCP_REGION}" \
-  --platform "managed" \
   --set-env-vars "${RUN_ENV_VARS}" \
   ${SERVICE_ACCOUNT_FLAG} \
-  ${ALLOW_UNAUTHENTICATED_FLAG} \
   --project "${GCP_PROJECT_ID}" \
   --quiet
 
-echo "--- Deployment Complete ---"
-echo "Cloud Run Service URL: $(gcloud run services describe ${CLOUD_RUN_SERVICE_NAME} --region ${GCP_REGION} --format 'value(status.url)' --project ${GCP_PROJECT_ID})"
+echo "--- Deployment to Cloud Run Job Complete ---"
+echo "Cloud Run Job '${CLOUD_RUN_SERVICE_NAME}' deployed."
+echo "You can execute it manually using: gcloud run jobs execute ${CLOUD_RUN_SERVICE_NAME} --region ${GCP_REGION} --project ${GCP_PROJECT_ID}"
 echo "---------------------------"
 
 # Make the script executable: chmod +x deploy_to_gcp.sh

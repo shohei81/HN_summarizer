@@ -1,30 +1,44 @@
-# Use an official Python runtime as a parent image
-FROM python:3.10-slim
+# ---- Builder Stage ----
+FROM --platform=linux/amd64 python:3.11-slim AS builder
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+# Set environment variables for the builder stage
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies that might be needed by Python packages
-# (Example: RUN apt-get update && apt-get install -y --no-install-recommends some-package && rm -rf /var/lib/apt/lists/*)
-# For now, we'll assume no extra system packages are needed beyond what's in python:3.10-slim
-
-# Copy the requirements file into the container
+# Copy only the requirements file first to leverage Docker cache
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies into a target directory
+# Using --no-cache-dir to keep the layer small
+# Upgrading pip first is a good practice
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --target=/app/packages -r requirements.txt
 
-# Copy the rest of the application code into the container
+# ---- Final Stage ----
+FROM --platform=linux/amd64 gcr.io/distroless/python3-debian12:nonroot
+
+# Set environment variables for the final stage
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+# Set PYTHONPATH to include the installed packages
+ENV PYTHONPATH=/app/packages
+
+WORKDIR /app
+
+# Copy the installed Python packages from the builder stage
+COPY --from=builder /app/packages /app/packages
+
+# Copy the application code
 COPY src/ ./src/
 COPY config.yaml .
-# If main.py is in the root and not in src, it should also be copied:
-# COPY main.py . 
-# Based on previous file listings, main.py is in src, so ./src/ covers it.
+# If main.py were in the root, you would copy it like this:
+# COPY main.py .
+
+# User and permissions are handled by distroless:nonroot image (runs as non-root)
 
 # Command to run the application
 # Ensure main.py is in the src directory as expected.
-CMD ["python", "src/main.py", "--config", "config.yaml", "--debug"]
+# The distroless image has 'python3' (often symlinked as 'python') in its PATH.
+CMD ["src/main.py", "--config", "config.yaml", "--debug"]

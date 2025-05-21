@@ -8,6 +8,8 @@ import time
 from typing import Dict, Any, Optional, List
 import requests
 from abc import ABC, abstractmethod
+import os
+from google.cloud import secretmanager
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +29,7 @@ class GeminiProvider(LLMProvider):
     def __init__(
         self,
         api_key: str,
-        model: str = "gemini-1.5-flash-latest",
+        model: str = "gemini-2.0-flash",
         max_tokens: int = 500,
     ):
         """
